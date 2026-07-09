@@ -461,4 +461,8 @@ export default function App() {
       </div>
     </div>
   );
+}// （既存のコードの最後）
+  );
 }
+
+export default App; // この行を末尾に追加してください
