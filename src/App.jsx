@@ -1,91 +1,63 @@
 import { useState, useEffect } from 'react';
 
-// --- 効果音再生関数（ブラウザブロック解除対応版） ---
+// --- 効果音再生関数 ---
 const playCorrectSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    // ブラウザの自動再生ブロックを解除
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    
     oscillator.type = 'sine';
-    // ド(C5) から ソ(G5) へ滑らかにピキーンと上がる音
     oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
     oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.12); 
-    
     gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
-    
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.6);
-  } catch (e) {
-    console.log("Audio error:", e);
-  }
+  } catch (e) { console.log("Audio error:", e); }
 };
 
 const playWrongSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
-    
     oscillator.connect(gainNode);
     gainNode.connect(audioCtx.destination);
-    
-    oscillator.type = 'sawtooth'; // 少し濁ったブブーという音
+    oscillator.type = 'sawtooth';
     oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
     oscillator.frequency.setValueAtTime(120, audioCtx.currentTime + 0.15);
-    
     gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
     gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-    
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.4);
-  } catch (e) {
-    console.log("Audio error:", e);
-  }
+  } catch (e) { console.log("Audio error:", e); }
 };
 
-// --- アイコンコンポーネント ---
+// --- アイコン ---
 const RefreshIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>);
 const LightbulbIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>);
 const CheckIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>);
 const PrinterIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>);
 const StoreIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg>);
 
-// --- クリア演出（紙吹雪）コンポーネント ---
+// --- 紙吹雪 ---
 const Confetti = () => {
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden flex justify-center">
       {[...Array(60)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute animate-confetti"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `-10%`,
-            backgroundColor: ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'][Math.floor(Math.random() * 6)],
-            width: `${Math.random() * 10 + 6}px`,
-            height: `${Math.random() * 16 + 8}px`,
-            animationDelay: `${Math.random() * 1.5}s`,
-            animationDuration: `${Math.random() * 2 + 2.5}s`,
-            transform: `rotate(${Math.random() * 360}deg)`
-          }}
-        />
+        <div key={i} className="absolute animate-confetti" style={{
+          left: `${Math.random() * 100}%`, top: `-10%`,
+          backgroundColor: ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'][Math.floor(Math.random() * 6)],
+          width: `${Math.random() * 10 + 6}px`, height: `${Math.random() * 16 + 8}px`,
+          animationDelay: `${Math.random() * 1.5}s`, animationDuration: `${Math.random() * 2 + 2.5}s`,
+          transform: `rotate(${Math.random() * 360}deg)`
+        }} />
       ))}
-      <style>{`
-        @keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
-        .animate-confetti { animation: confetti linear forwards; }
-      `}</style>
+      <style>{`@keyframes confetti { 0% { transform: translateY(0) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } } .animate-confetti { animation: confetti linear forwards; }`}</style>
     </div>
   );
 };
@@ -115,13 +87,11 @@ const CATEGORIES = [
   { id: 20, name: "ポケモン", words: ["ぴかちゅう", "いーぶい", "かびごん", "げんがー", "りざーどん", "みゅうつー", "かめっくす", "ふしぎだね", "にゃおは", "ほげーた", "くわっす", "るかりお", "ぷりん", "こいんぐ", "めたもん", "ぽっちゃま", "るぎあ", "ほおう"] }
 ];
 
-// --- プレミアムおだい（コインで解放） ---
 const PREMIUM_CATEGORIES = [
   { id: 101, name: "✨でんせつのポケモン", price: 500, words: ["みゅうつー", "るぎあ", "ほおう", "すいくん", "えんてい", "らいこう", "でぃあるが", "ぱるきあ", "れっくうざ", "ぐらーどん", "かいおーが", "ざしあん", "むげんだいな"] },
   { id: 102, name: "⛏️マインクラフト", price: 500, words: ["くりーぱー", "すけるとん", "ぞんび", "えんだーまん", "すらいむ", "がすと", "つるはし", "たいまつ", "だいやもんど", "てつ", "きん", "ぶた", "うし"] }
 ];
 
-// --- きせかえスタンプ（コインで解放） ---
 const STAMPS = [
   { id: 'default', name: 'ふつうの色', emoji: '', price: 0 },
   { id: 'star', name: '⭐ ほしスタンプ', emoji: '⭐', price: 300 },
@@ -129,11 +99,14 @@ const STAMPS = [
   { id: 'flower', name: '🌸 さくらスタンプ', emoji: '🌸', price: 300 },
 ];
 
-// --- ガチャの景品一覧 ---
 const GACHA_POOL = ['👑','💎','🏆','🚀','🦄','🦖','🍔','🎸','⚽','🎮','🤖','👻','👽','🍀','🔥','⚔️','🛡️','🍎'];
-
 const HIRAGANA = "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんがぎぐげござじずぜぞだぢづでどばびぶべぼぱぴぷぺぽ";
 const REWARD_COINS = { 1: 10, 2: 50, 3: 100, 4: 200, 5: 300 };
+
+// --- NGワード集（ゲーム内の全単語 ＋ 偶然できやすい短い言葉） ---
+const ALL_GAME_WORDS = [...CATEGORIES, ...PREMIUM_CATEGORIES].flatMap(c => c.words);
+const EXTRA_NG_WORDS = ["やぎ", "うし", "うま", "しか", "かめ", "かに", "わに", "へび", "あり", "はち", "むし", "とり", "さる", "くま", "とら", "はと", "たこ", "いか", "あか", "あお", "しろ", "くろ", "やま", "かわ", "うみ", "そら", "はな", "き", "みず", "あし", "て", "め", "くち", "みみ", "かみ"];
+const NG_WORD_LIST = Array.from(new Set([...ALL_GAME_WORDS, ...EXTRA_NG_WORDS]));
 
 export default function App() {
   const [difficulty, setDifficulty] = useState(2);
@@ -147,27 +120,21 @@ export default function App() {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [gachaResult, setGachaResult] = useState(null);
 
-  // localStorage を使ったデータ永続化
   const [coins, setCoins] = useState(() => { const s = localStorage.getItem('shared_game_coins'); return s ? parseInt(s, 10) : 0; });
   const [unlockedCategories, setUnlockedCategories] = useState(() => JSON.parse(localStorage.getItem('unlockedCategories')) || []);
   const [unlockedStamps, setUnlockedStamps] = useState(() => JSON.parse(localStorage.getItem('unlockedStamps')) || ['default']);
   const [currentStamp, setCurrentStamp] = useState(() => localStorage.getItem('currentStamp') || 'default');
   const [badges, setBadges] = useState(() => JSON.parse(localStorage.getItem('badges')) || []);
-
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [isCoinRewarded, setIsCoinRewarded] = useState(false);
 
-  // 自動セーブ処理
   useEffect(() => { localStorage.setItem('shared_game_coins', coins.toString()); }, [coins]);
   useEffect(() => { localStorage.setItem('unlockedCategories', JSON.stringify(unlockedCategories)); }, [unlockedCategories]);
   useEffect(() => { localStorage.setItem('unlockedStamps', JSON.stringify(unlockedStamps)); }, [unlockedStamps]);
   useEffect(() => { localStorage.setItem('currentStamp', currentStamp); }, [currentStamp]);
   useEffect(() => { localStorage.setItem('badges', JSON.stringify(badges)); }, [badges]);
 
-  const activeCategories = [
-    ...CATEGORIES,
-    ...PREMIUM_CATEGORIES.filter(c => unlockedCategories.includes(c.id))
-  ];
+  const activeCategories = [...CATEGORIES, ...PREMIUM_CATEGORIES.filter(c => unlockedCategories.includes(c.id))];
 
   const getDirections = (level) => {
     const rightDown = [[0, 1], [1, 0]]; 
@@ -176,7 +143,28 @@ export default function App() {
     return [...rightDown, ...diag];
   };
 
-  // 厳密な配置ロジックの完全復元
+  // 盤面からすべての文字列（長さ2〜7）を抽出する関数
+  const extractAllStrings = (board) => {
+    const size = 7;
+    const strings = [];
+    // あらゆる方向（逆読み含む）をチェックして偶然を徹底排除
+    const dirs = [[0, 1], [1, 0], [1, 1], [0, -1], [-1, 0], [-1, -1], [1, -1], [-1, 1]]; 
+    for (let r = 0; r < size; r++) {
+      for (let c = 0; c < size; c++) {
+        for (let d of dirs) {
+          let str = "";
+          let cr = r, cc = c;
+          while (cr >= 0 && cr < size && cc >= 0 && cc < size) {
+            str += board[cr][cc];
+            if (str.length >= 2) strings.push(str);
+            cr += d[0]; cc += d[1];
+          }
+        }
+      }
+    }
+    return strings;
+  };
+
   const generateBoard = (level, categoryObj) => {
     const size = 7;
     const board = Array(size).fill(null).map(() => Array(size).fill(null));
@@ -188,11 +176,11 @@ export default function App() {
     const answerCellsArray = [];
     const hintCellsArray = [];
 
+    // 1. おだいの言葉を配置
     for (const word of availableWords) {
       if (selectedWords.length >= numWords) break;
       let placed = false;
       let attempts = 0;
-
       while (!placed && attempts < 100) {
         attempts++;
         const dir = dirs[Math.floor(Math.random() * dirs.length)];
@@ -207,11 +195,9 @@ export default function App() {
             const r = startRow + dir[0] * i;
             const c = startCol + dir[1] * i;
             if (board[r][c] !== null && board[r][c] !== word[i]) {
-              conflict = true;
-              break;
+              conflict = true; break;
             }
           }
-
           if (!conflict) {
             const currentAnswerCells = [];
             for (let i = 0; i < word.length; i++) {
@@ -229,9 +215,42 @@ export default function App() {
       }
     }
 
-    const finalBoard = board.map(row =>
-      row.map(cell => cell ?? HIRAGANA[Math.floor(Math.random() * HIRAGANA.length)])
-    );
+    // 2. 空白をランダムなひらがなで埋めつつ、NGワードが偶然できないかチェック
+    let finalBoard = null;
+    let isClean = false;
+    let fillAttempts = 0;
+    const targetWordStrings = selectedWords.map(tw => tw.word);
+
+    while (!isClean && fillAttempts < 50) {
+      fillAttempts++;
+      const tempBoard = board.map(row => [...row]);
+      
+      // 空白埋め
+      for (let r = 0; r < size; r++) {
+        for (let c = 0; c < size; c++) {
+          if (tempBoard[r][c] === null) {
+            tempBoard[r][c] = HIRAGANA[Math.floor(Math.random() * HIRAGANA.length)];
+          }
+        }
+      }
+
+      // チェック
+      const allStrings = extractAllStrings(tempBoard);
+      const unintendedFound = allStrings.some(str => {
+        // NGワードに含まれているが、今回のおだいとして選ばれた言葉ではない場合アウト
+        return NG_WORD_LIST.includes(str) && !targetWordStrings.includes(str);
+      });
+
+      if (!unintendedFound) {
+        finalBoard = tempBoard;
+        isClean = true;
+      }
+    }
+
+    // もし50回やってもダメだった場合は妥協してそのまま返す（無限ループ防止）
+    if (!isClean) {
+      finalBoard = board.map(row => row.map(cell => cell ?? HIRAGANA[Math.floor(Math.random() * HIRAGANA.length)]));
+    }
 
     return { board: finalBoard, selectedWords, answerCells: new Set(answerCellsArray), hintCells: new Set(hintCellsArray), categoryName: categoryObj.name };
   };
@@ -264,7 +283,6 @@ export default function App() {
     setSelectedCells(newSelected);
   };
 
-  // 個別単語オープン（コイン消費）
   const handleRevealWord = (idx) => {
     if (showAnswer) return;
     const cost = difficulty * 10;
@@ -278,7 +296,6 @@ export default function App() {
     }
   };
 
-  // 全体ヒント（10コイン消費）
   const handleBuyHint = () => {
     if (coins >= 10 && !showHint) {
       setCoins(c => c - 10);
@@ -286,7 +303,6 @@ export default function App() {
     }
   };
 
-  // こたえあわせ（成否に応じた効果音の鳴り分け）
   const handleCheckAnswer = () => {
     setShowAnswer(true);
     let isPerfectMatch = false;
@@ -295,7 +311,7 @@ export default function App() {
     }
 
     if (isPerfectMatch) {
-      playCorrectSound(); // 正解！ピキーン
+      playCorrectSound();
       if (!isCoinRewarded) {
         const reward = REWARD_COINS[difficulty] || 10;
         setCoins(c => c + reward);
@@ -303,12 +319,11 @@ export default function App() {
         setIsCoinRewarded(true);
       }
     } else {
-      playWrongSound(); // おしい！ブブー
+      playWrongSound();
       setEarnedCoins(0);
     }
   };
 
-  // おみせショップ＆ガチャ処理
   const buyCategory = (id, price) => {
     if (coins >= price && !unlockedCategories.includes(id)) {
       setCoins(c => c - price);
@@ -355,7 +370,6 @@ export default function App() {
       
       {showAnswer && earnedCoins > 0 && <Confetti />}
 
-      {/* --- コイン＆おみせボタン UI --- */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-col items-end gap-2 z-20 print:hidden">
         <div className="bg-white border-4 border-yellow-400 text-yellow-600 font-black px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
           <span className="text-2xl">🪙</span>
@@ -370,7 +384,6 @@ export default function App() {
       </div>
 
       <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden print:shadow-none print:bg-transparent mt-24 sm:mt-0 relative z-10">
-
         <div className="bg-orange-400 p-4 sm:p-6 text-white text-center print:bg-transparent print:text-black print:p-0 print:mb-4">
           <h1 className="text-3xl sm:text-4xl font-black tracking-wider">もじさがしゲーム</h1>
           <p className="mt-2 text-orange-100 font-bold print:hidden">かくれていることばを みつけよう！</p>
@@ -404,7 +417,6 @@ export default function App() {
         </div>
 
         <div className="p-4 sm:p-6 print:p-0">
-
           <div className="mb-6 bg-blue-50 p-4 rounded-2xl border-2 border-blue-200 print:border-none print:bg-transparent print:p-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div className="flex items-center gap-2 flex-wrap">
@@ -498,7 +510,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* --- おみせ＆ガチャ モーダル --- */}
       {isShopOpen && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
@@ -521,11 +532,10 @@ export default function App() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-8">
               
-              {/* ガチャ */}
               <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-200">
                 <h3 className="text-xl font-bold text-orange-800 mb-4 flex items-center gap-2">🎁 ごほうびガチャ (100🪙)</h3>
                 <div className="flex flex-col sm:flex-row items-center gap-4">
-                  <button onClick={playGacha} disabled={coins < 100} className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-black px-6 py-4 rounded-full shadow-md text-lg active:scale-95">
+                  <button onClick={playGacha} disabled={coins < 100} className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-black px-6 py-4 rounded-full shadow-md text-lg active:scale-95 whitespace-nowrap">
                     ガチャをまわす！
                   </button>
                   <div className="flex-1 bg-white p-3 rounded-xl border border-gray-200 w-full">
@@ -537,7 +547,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* とくべつなおだい */}
               <div>
                 <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">🔓 とくべつなおだい (各500🪙)</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
@@ -559,7 +568,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* きせかえスタンプ */}
               <div>
                 <h3 className="text-xl font-bold text-pink-800 mb-4 flex items-center gap-2">🎨 きせかえスタンプ (各300🪙)</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
