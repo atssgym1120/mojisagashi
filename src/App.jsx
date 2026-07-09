@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 
-// --- 効果音再生関数（ピキーン！と鳴るピュアオーディオ） ---
+// --- 効果音再生関数（ブラウザブロック解除対応版） ---
 const playCorrectSound = () => {
   try {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    // ブラウザの自動再生ブロックを解除
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
     
@@ -11,7 +15,7 @@ const playCorrectSound = () => {
     gainNode.connect(audioCtx.destination);
     
     oscillator.type = 'sine';
-    // ド(C5) から ソ(G5) へ滑らかに音が上がるピキーン効果音
+    // ド(C5) から ソ(G5) へ滑らかにピキーンと上がる音
     oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
     oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.12); 
     
@@ -20,6 +24,32 @@ const playCorrectSound = () => {
     
     oscillator.start();
     oscillator.stop(audioCtx.currentTime + 0.6);
+  } catch (e) {
+    console.log("Audio error:", e);
+  }
+};
+
+const playWrongSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sawtooth'; // 少し濁ったブブーという音
+    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+    oscillator.frequency.setValueAtTime(120, audioCtx.currentTime + 0.15);
+    
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.4);
   } catch (e) {
     console.log("Audio error:", e);
   }
@@ -60,7 +90,7 @@ const Confetti = () => {
   );
 };
 
-// --- ゲームデータ（超大容量版） ---
+// --- ゲームデータ ---
 const CATEGORIES = [
   { id: 0, name: "くだもの", words: ["りんご", "みかん", "いちご", "すいか", "ばなな", "めろん", "ぶどう", "もも", "れもん", "かき", "ぱいなっぷる", "さくらんぼ", "まんごー", "ようなし"] },
   { id: 1, name: "のりもの", words: ["くるま", "でんしゃ", "ふね", "ひこうき", "ばす", "とらっく", "じてんしゃ", "ろけっと", "よっと", "ばいく", "しんかんせん", "ぱとかー", "きゅうきゅうしゃ", "しょうぼうしゃ"] },
@@ -69,7 +99,7 @@ const CATEGORIES = [
   { id: 4, name: "どうぶつ", words: ["いぬ", "ねこ", "うさぎ", "きりん", "ぞう", "らいおん", "くま", "さる", "とら", "ごりら", "ぱんだ", "こあら", "しか", "きつね", "たぬき"] },
   { id: 5, name: "とり", words: ["からす", "すずめ", "つばめ", "はと", "にわとり", "ぺんぎん", "だちょう", "ふくろう", "わし", "たか", "あひる", "かもめ", "いんこ", "はくちょう"] },
   { id: 6, name: "むし", words: ["あり", "はち", "ちょう", "とんぼ", "せみ", "かぶとむし", "くわがた", "ばった", "かまきり", "だんごむし", "てんとうむし", "ほたる", "か", "くも"] },
-  { id: 7, name: "うみのいきもの", words: ["イルカ", "くじら", "さめ", "たこ", "いか", "くらげ", "かに", "かめ", "あざらし", "らっこ", "しゃち", "ひとで", "さんご", "えい"] },
+  { id: 7, name: "うみのいきもの", words: ["いるか", "くじら", "さめ", "たこ", "いか", "くらげ", "かに", "かめ", "あざらし", "らっこ", "しゃち", "ひとで", "さんご", "えい"] },
   { id: 8, name: "からだ", words: ["あたま", "かお", "みみ", "はな", "くち", "あし", "おなか", "せなか", "かた", "うで", "むね", "こし", "ひざ", "ゆび", "まゆげ"] },
   { id: 9, name: "みせ", words: ["ほんや", "ぱんや", "はなや", "くすりや", "やおや", "とこや", "びよういん", "ぶんぼうぐや", "けえきや", "すーぱー", "こんびに", "かふぇ", "くつや", "ふくや"] },
   { id: 10, name: "がっこう", words: ["つくえ", "いす", "こくばん", "えんぴつ", "けしごむ", "のり", "はさみ", "じょうぎ", "ふでばこ", "こま", "きょうかしょ", "のーと", "たいいくかん", "ぷーる", "ぱそこん"] },
@@ -117,7 +147,7 @@ export default function App() {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [gachaResult, setGachaResult] = useState(null);
 
-  // localStorage を使った共通セーブデータ
+  // localStorage を使ったデータ永続化
   const [coins, setCoins] = useState(() => { const s = localStorage.getItem('shared_game_coins'); return s ? parseInt(s, 10) : 0; });
   const [unlockedCategories, setUnlockedCategories] = useState(() => JSON.parse(localStorage.getItem('unlockedCategories')) || []);
   const [unlockedStamps, setUnlockedStamps] = useState(() => JSON.parse(localStorage.getItem('unlockedStamps')) || ['default']);
@@ -127,7 +157,7 @@ export default function App() {
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [isCoinRewarded, setIsCoinRewarded] = useState(false);
 
-  // セーブ処理の同期
+  // 自動セーブ処理
   useEffect(() => { localStorage.setItem('shared_game_coins', coins.toString()); }, [coins]);
   useEffect(() => { localStorage.setItem('unlockedCategories', JSON.stringify(unlockedCategories)); }, [unlockedCategories]);
   useEffect(() => { localStorage.setItem('unlockedStamps', JSON.stringify(unlockedStamps)); }, [unlockedStamps]);
@@ -139,15 +169,14 @@ export default function App() {
     ...PREMIUM_CATEGORIES.filter(c => unlockedCategories.includes(c.id))
   ];
 
-  // 難易度に応じた単語の方向を返す (※順読みのみに制限)
   const getDirections = (level) => {
-    const rightDown = [[0, 1], [1, 0]]; // 右、下
-    const diag = [[1, 1]]; // 右下斜め
+    const rightDown = [[0, 1], [1, 0]]; 
+    const diag = [[1, 1]]; 
     if (level <= 2) return rightDown;
     return [...rightDown, ...diag];
   };
 
-  // 盤面の生成 (厳密な完全版ロジック)
+  // 厳密な配置ロジックの完全復元
   const generateBoard = (level, categoryObj) => {
     const size = 7;
     const board = Array(size).fill(null).map(() => Array(size).fill(null));
@@ -235,7 +264,7 @@ export default function App() {
     setSelectedCells(newSelected);
   };
 
-  // 個別文字オープン（？？？）時のコイン消費処理
+  // 個別単語オープン（コイン消費）
   const handleRevealWord = (idx) => {
     if (showAnswer) return;
     const cost = difficulty * 10;
@@ -244,7 +273,7 @@ export default function App() {
         setCoins(c => c - cost);
         setRevealedWords(prev => new Set(prev).add(idx));
       } else {
-        alert("コインがたりないよ！もっと問題を解いてあつめよう！");
+        alert("コインがたりないよ！問題を解いて集めよう！");
       }
     }
   };
@@ -257,19 +286,24 @@ export default function App() {
     }
   };
 
+  // こたえあわせ（成否に応じた効果音の鳴り分け）
   const handleCheckAnswer = () => {
     setShowAnswer(true);
     let isPerfectMatch = false;
     if (gameState && selectedCells.size === gameState.answerCells.size) {
       isPerfectMatch = [...gameState.answerCells].every(cell => selectedCells.has(cell));
     }
-    if (isPerfectMatch && !isCoinRewarded) {
-      playCorrectSound(); // 正解の効果音を再生！
-      const reward = REWARD_COINS[difficulty] || 10;
-      setCoins(c => c + reward);
-      setEarnedCoins(reward);
-      setIsCoinRewarded(true);
+
+    if (isPerfectMatch) {
+      playCorrectSound(); // 正解！ピキーン
+      if (!isCoinRewarded) {
+        const reward = REWARD_COINS[difficulty] || 10;
+        setCoins(c => c + reward);
+        setEarnedCoins(reward);
+        setIsCoinRewarded(true);
+      }
     } else {
+      playWrongSound(); // おしい！ブブー
       setEarnedCoins(0);
     }
   };
@@ -356,7 +390,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-orange-800 whitespace-nowrap">おだい:</span>
-              <select window-value={selectedCategoryId} value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="p-2 rounded-xl border-2 border-orange-200 font-bold text-gray-700 bg-white cursor-pointer focus:outline-none focus:border-orange-500 min-w-[140px]">
+              <select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="p-2 rounded-xl border-2 border-orange-200 font-bold text-gray-700 bg-white cursor-pointer focus:outline-none focus:border-orange-500 min-w-[140px]">
                 <option value="random">🎲 おまかせ (ランダム)</option>
                 {activeCategories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
