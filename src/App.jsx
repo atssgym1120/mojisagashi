@@ -1,5 +1,30 @@
 import { useState, useEffect } from 'react';
 
+// --- 効果音再生関数（ピキーン！と鳴るピュアオーディオ） ---
+const playCorrectSound = () => {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sine';
+    // ド(C5) から ソ(G5) へ滑らかに音が上がるピキーン効果音
+    oscillator.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+    oscillator.frequency.exponentialRampToValueAtTime(783.99, audioCtx.currentTime + 0.12); 
+    
+    gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+    
+    oscillator.start();
+    oscillator.stop(audioCtx.currentTime + 0.6);
+  } catch (e) {
+    console.log("Audio error:", e);
+  }
+};
+
 // --- アイコンコンポーネント ---
 const RefreshIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>);
 const LightbulbIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>);
@@ -35,7 +60,7 @@ const Confetti = () => {
   );
 };
 
-// --- ゲームデータ ---
+// --- ゲームデータ（超大容量版） ---
 const CATEGORIES = [
   { id: 0, name: "くだもの", words: ["りんご", "みかん", "いちご", "すいか", "ばなな", "めろん", "ぶどう", "もも", "れもん", "かき", "ぱいなっぷる", "さくらんぼ", "まんごー", "ようなし"] },
   { id: 1, name: "のりもの", words: ["くるま", "でんしゃ", "ふね", "ひこうき", "ばす", "とらっく", "じてんしゃ", "ろけっと", "よっと", "ばいく", "しんかんせん", "ぱとかー", "きゅうきゅうしゃ", "しょうぼうしゃ"] },
@@ -44,15 +69,15 @@ const CATEGORIES = [
   { id: 4, name: "どうぶつ", words: ["いぬ", "ねこ", "うさぎ", "きりん", "ぞう", "らいおん", "くま", "さる", "とら", "ごりら", "ぱんだ", "こあら", "しか", "きつね", "たぬき"] },
   { id: 5, name: "とり", words: ["からす", "すずめ", "つばめ", "はと", "にわとり", "ぺんぎん", "だちょう", "ふくろう", "わし", "たか", "あひる", "かもめ", "いんこ", "はくちょう"] },
   { id: 6, name: "むし", words: ["あり", "はち", "ちょう", "とんぼ", "せみ", "かぶとむし", "くわがた", "ばった", "かまきり", "だんごむし", "てんとうむし", "ほたる", "か", "くも"] },
-  { id: 7, name: "うみのいきもの", words: ["いるか", "くじら", "さめ", "たこ", "いか", "くらげ", "かに", "かめ", "あざらし", "らっこ", "しゃち", "ひとで", "さんご", "えい"] },
+  { id: 7, name: "うみのいきもの", words: ["イルカ", "くじら", "さめ", "たこ", "いか", "くらげ", "かに", "かめ", "あざらし", "らっこ", "しゃち", "ひとで", "さんご", "えい"] },
   { id: 8, name: "からだ", words: ["あたま", "かお", "みみ", "はな", "くち", "あし", "おなか", "せなか", "かた", "うで", "むね", "こし", "ひざ", "ゆび", "まゆげ"] },
   { id: 9, name: "みせ", words: ["ほんや", "ぱんや", "はなや", "くすりや", "やおや", "とこや", "びよういん", "ぶんぼうぐや", "けえきや", "すーぱー", "こんびに", "かふぇ", "くつや", "ふくや"] },
-  { id: 10, name: "がっこう", words: ["つくえ", "いす", "こくばん", "えんぴつ", "けしごむ", "のり", "はさみ", "じょうぎ", "ふでばこ", "こま", "きょうかしょ, のーと", "たいいくかん", "ぷーる", "ぱそこん"] },
+  { id: 10, name: "がっこう", words: ["つくえ", "いす", "こくばん", "えんぴつ", "けしごむ", "のり", "はさみ", "じょうぎ", "ふでばこ", "こま", "きょうかしょ", "のーと", "たいいくかん", "ぷーる", "ぱそこん"] },
   { id: 11, name: "いえのなか", words: ["てれび", "れいぞうこ", "そうじき", "とけい", "べっど", "ふとん", "まくら", "そふぁ", "かがみ", "いす", "でんしれんじ", "せんたくき", "えあこん", "せんぷうき"] },
   { id: 12, name: "やさい", words: ["とまと", "きゅうり", "なす", "きゃべつ", "れたす", "にんじん", "だいこん", "たまねぎ", "ねぎ", "ごぼう", "ぴーまん", "ほうれんそう", "かぼちゃ", "じゃがいも"] },
   { id: 13, name: "ぶんぼうぐ", words: ["えんぴつ", "けしごむ", "はさみ", "のり", "ものさし", "じょうぎ", "ふでばこ", "くれよん", "えのぐ", "ふで", "ぼーるぺん", "めもちょう", "ほっちきす"] },
   { id: 14, name: "きせつ・てんき", words: ["はる", "なつ", "あき", "ふゆ", "あめ", "はれ", "ゆき", "くも", "かぜ", "かみなり", "たいふう", "にじ", "あられ", "ゆうだち"] },
-  { id: 15, name: "しごと", words: ["いしゃ", "かんごし", "けいさつ", "しょうぼう", "せんせい", "だいく", "かしゅ", "びようし", "けいびいん", "ぱいろっと, のうか", "はいゆう", "ほいくし"] },
+  { id: 15, name: "しごと", words: ["いしゃ", "かんごし", "けいさつ", "しょうぼう", "せんせい", "だいく", "かしゅ", "びようし", "けいびいん", "ぱいろっと", "のうか", "はいゆう", "ほいくし"] },
   { id: 16, name: "ほし・そら", words: ["たいよう", "つき", "ほし", "ちきゅう", "うちゅう", "すいせい", "きんせい", "かせい", "もくせい", "どせい", "うみ", "そら", "にじ"] },
   { id: 17, name: "あそび", words: ["かくれんぼ", "おにごっこ", "すべりだい", "ぶらんこ", "てつぼう", "なわとび", "おてだま", "こま", "つみき", "かるた", "すなば", "ぷーる", "げーむ", "おえかき"] },
   { id: 18, name: "がっき", words: ["ぴあの", "たいこ", "ふえ", "らっぱ", "ばいおりん", "ぎたあ", "こと", "もっきん", "てっきん", "しんばる", "どらむ", "けんばん", "はーもにか", "おるがん"] },
@@ -92,7 +117,7 @@ export default function App() {
   const [isShopOpen, setIsShopOpen] = useState(false);
   const [gachaResult, setGachaResult] = useState(null);
 
-  // localStorage を使ったセーブデータ
+  // localStorage を使った共通セーブデータ
   const [coins, setCoins] = useState(() => { const s = localStorage.getItem('shared_game_coins'); return s ? parseInt(s, 10) : 0; });
   const [unlockedCategories, setUnlockedCategories] = useState(() => JSON.parse(localStorage.getItem('unlockedCategories')) || []);
   const [unlockedStamps, setUnlockedStamps] = useState(() => JSON.parse(localStorage.getItem('unlockedStamps')) || ['default']);
@@ -102,14 +127,13 @@ export default function App() {
   const [earnedCoins, setEarnedCoins] = useState(0);
   const [isCoinRewarded, setIsCoinRewarded] = useState(false);
 
-  // セーブ処理の自動化
+  // セーブ処理の同期
   useEffect(() => { localStorage.setItem('shared_game_coins', coins.toString()); }, [coins]);
   useEffect(() => { localStorage.setItem('unlockedCategories', JSON.stringify(unlockedCategories)); }, [unlockedCategories]);
   useEffect(() => { localStorage.setItem('unlockedStamps', JSON.stringify(unlockedStamps)); }, [unlockedStamps]);
   useEffect(() => { localStorage.setItem('currentStamp', currentStamp); }, [currentStamp]);
   useEffect(() => { localStorage.setItem('badges', JSON.stringify(badges)); }, [badges]);
 
-  // 現在遊べるおだいのリスト
   const activeCategories = [
     ...CATEGORIES,
     ...PREMIUM_CATEGORIES.filter(c => unlockedCategories.includes(c.id))
@@ -123,7 +147,7 @@ export default function App() {
     return [...rightDown, ...diag];
   };
 
-  // 盤面の生成
+  // 盤面の生成 (厳密な完全版ロジック)
   const generateBoard = (level, categoryObj) => {
     const size = 7;
     const board = Array(size).fill(null).map(() => Array(size).fill(null));
@@ -211,12 +235,21 @@ export default function App() {
     setSelectedCells(newSelected);
   };
 
+  // 個別文字オープン（？？？）時のコイン消費処理
   const handleRevealWord = (idx) => {
     if (showAnswer) return;
-    setRevealedWords(prev => new Set(prev).add(idx));
+    const cost = difficulty * 10;
+    if (!revealedWords.has(idx)) {
+      if (coins >= cost) {
+        setCoins(c => c - cost);
+        setRevealedWords(prev => new Set(prev).add(idx));
+      } else {
+        alert("コインがたりないよ！もっと問題を解いてあつめよう！");
+      }
+    }
   };
 
-  // 有料ヒント処理
+  // 全体ヒント（10コイン消費）
   const handleBuyHint = () => {
     if (coins >= 10 && !showHint) {
       setCoins(c => c - 10);
@@ -231,6 +264,7 @@ export default function App() {
       isPerfectMatch = [...gameState.answerCells].every(cell => selectedCells.has(cell));
     }
     if (isPerfectMatch && !isCoinRewarded) {
+      playCorrectSound(); // 正解の効果音を再生！
       const reward = REWARD_COINS[difficulty] || 10;
       setCoins(c => c + reward);
       setEarnedCoins(reward);
@@ -240,7 +274,7 @@ export default function App() {
     }
   };
 
-  // おみせ処理
+  // おみせショップ＆ガチャ処理
   const buyCategory = (id, price) => {
     if (coins >= price && !unlockedCategories.includes(id)) {
       setCoins(c => c - price);
@@ -260,11 +294,11 @@ export default function App() {
       const item = GACHA_POOL[Math.floor(Math.random() * GACHA_POOL.length)];
       setGachaResult(item);
       setBadges([...badges, item]);
-      setTimeout(() => setGachaResult(null), 3000); // 3秒で結果を消す
+      setTimeout(() => setGachaResult(null), 2500);
     }
   };
 
-  const handlePrint = () => { /* 省略せずそのまま */
+  const handlePrint = () => {
     if (!gameState) return;
     const printWindow = window.open('', '_blank');
     if (!printWindow) { setShowPrintModal(true); return; }
@@ -285,7 +319,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-yellow-50 text-gray-800 font-sans p-2 sm:p-4 selection:bg-orange-200 relative">
       
-      {showAnswer && <Confetti />}
+      {showAnswer && earnedCoins > 0 && <Confetti />}
 
       {/* --- コイン＆おみせボタン UI --- */}
       <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex flex-col items-end gap-2 z-20 print:hidden">
@@ -322,7 +356,7 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-bold text-orange-800 whitespace-nowrap">おだい:</span>
-              <select value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="p-2 rounded-xl border-2 border-orange-200 font-bold text-gray-700 bg-white cursor-pointer focus:outline-none focus:border-orange-500 min-w-[140px]">
+              <select window-value={selectedCategoryId} value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} className="p-2 rounded-xl border-2 border-orange-200 font-bold text-gray-700 bg-white cursor-pointer focus:outline-none focus:border-orange-500 min-w-[140px]">
                 <option value="random">🎲 おまかせ (ランダム)</option>
                 {activeCategories.map(cat => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -352,8 +386,12 @@ export default function App() {
               {gameState.selectedWords.map((item, idx) => {
                 const isRevealed = revealedWords.has(idx) || showAnswer;
                 return (
-                  <button key={idx} onClick={() => handleRevealWord(idx)} disabled={isRevealed || showAnswer} className={`px-4 py-2 rounded-full text-lg sm:text-xl font-bold shadow-sm border-2 tracking-widest transition-transform print:border-black print:shadow-none print:px-2 print:py-0 print:text-2xl ${isRevealed ? "bg-white text-gray-700 border-blue-100 cursor-default" : "bg-gray-200 text-gray-500 border-gray-300 hover:bg-gray-300 hover:scale-105 active:scale-95 cursor-pointer"}`}>
-                    {isRevealed ? item.word : "？".repeat(item.word.length)}
+                  <button 
+                    key={idx} 
+                    onClick={() => handleRevealWord(idx)} 
+                    className={`px-4 py-2 rounded-full text-lg sm:text-xl font-bold shadow-sm border-2 tracking-widest transition-transform print:border-black print:shadow-none print:px-2 print:py-0 print:text-2xl ${isRevealed ? "bg-white text-gray-700 border-blue-100 cursor-default" : "bg-gray-200 text-gray-500 border-gray-300 hover:bg-gray-300 hover:scale-105 active:scale-95 cursor-pointer"}`}
+                  >
+                    {isRevealed ? item.word : `${"？".repeat(item.word.length)} (${difficulty * 10}🪙)`}
                   </button>
                 );
               })}
@@ -431,7 +469,6 @@ export default function App() {
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl relative">
             
-            {/* ガチャ結果アニメーション */}
             {gachaResult && (
               <div className="absolute inset-0 bg-yellow-100/90 z-20 flex flex-col items-center justify-center animate-pulse">
                 <span className="text-2xl font-bold text-yellow-800 mb-4">おめでとう！</span>
@@ -450,11 +487,11 @@ export default function App() {
 
             <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-8">
               
-              {/* ガチャコーナー */}
+              {/* ガチャ */}
               <div className="bg-orange-50 p-4 rounded-2xl border-2 border-orange-200">
                 <h3 className="text-xl font-bold text-orange-800 mb-4 flex items-center gap-2">🎁 ごほうびガチャ (100🪙)</h3>
                 <div className="flex flex-col sm:flex-row items-center gap-4">
-                  <button onClick={playGacha} disabled={coins < 100} className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-black px-6 py-4 rounded-full shadow-md text-lg active:scale-95 whitespace-nowrap">
+                  <button onClick={playGacha} disabled={coins < 100} className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-400 text-white font-black px-6 py-4 rounded-full shadow-md text-lg active:scale-95">
                     ガチャをまわす！
                   </button>
                   <div className="flex-1 bg-white p-3 rounded-xl border border-gray-200 w-full">
@@ -466,7 +503,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* プレミアムおだい */}
+              {/* とくべつなおだい */}
               <div>
                 <h3 className="text-xl font-bold text-blue-800 mb-4 flex items-center gap-2">🔓 とくべつなおだい (各500🪙)</h3>
                 <div className="grid sm:grid-cols-2 gap-3">
@@ -511,7 +548,6 @@ export default function App() {
                       </div>
                     )
                   })}
-                  {/* デフォルトに戻すボタン */}
                   <div className={`p-4 rounded-xl border-2 flex justify-between items-center ${currentStamp === 'default' ? 'bg-pink-100 border-pink-400' : 'bg-gray-50 border-gray-200'}`}>
                     <span className="font-bold">ふつうの色（スタンプなし）</span>
                     {currentStamp !== 'default' && (
